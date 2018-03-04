@@ -1,3 +1,6 @@
+# Ignore eclipse projetct folder
+software/eclipse-project-folder
+
 # Ignore list for Eagle, a PCB layout tool
 
 # Backup files
