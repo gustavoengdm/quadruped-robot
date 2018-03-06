@@ -16,8 +16,8 @@
 #include "com.hpp"
 
 #define __prescaler				8
-#define __clock_ticks_per_us	16
-#define us2ticks( us )			( __clock_ticks_per_us / __prescaler * (us) )
+#define __clock_ticks_per_us	(F_CPU / 1000000L)
+#define us2ticks( us )			( (__clock_ticks_per_us * (us)) / __prescaler )
 
 #define MAX_NUMBER_OF_SERVOS 12
 
@@ -34,7 +34,7 @@ namespace ServoService {
 			uint8_t pin;
 			volatile uint8_t * port;
 			volatile uint16_t ticks;
-			uint8_t active;
+			volatile uint8_t active;
 
 		public:
 			inline void low(void) {
@@ -48,18 +48,19 @@ namespace ServoService {
 
 	__servo servos[MAX_NUMBER_OF_SERVOS];
 
-	volatile uint16_t __frame_ticks;
-	static uint8_t __nbr_of_servos = 0;
-	static int8_t __servo_count = -1;
+	//volatile uint16_t __frame_ticks;
+	volatile uint8_t __nbr_of_servos = 0;
+	volatile int8_t __servo_count = -1;
 
 	/**
 	 * Configure Timer1 to ServoService
 	 * @param us frame period in microseconds
 	 */
-	void setup(uint16_t us) {
+	//void setup(uint16_t us) {
+	void init(void) {
 
 		// compute the number of ticks for the frame period
-		__frame_ticks = us2ticks(us);
+		//__frame_ticks = us2ticks(us);
 		__nbr_of_servos = 0;
 		__servo_count = -1;
 
@@ -69,14 +70,15 @@ namespace ServoService {
 		// configure prescaler 8
 		TCCR1B = (1 << CS11);
 
+		// start timer1
+		TCNT1 = 0;
+
 		// clear OCF1A to prevent any old interrupts
 		TIFR1 |= (1 << OCF1A);
 
 		// enable interrupt of Output Compare Register A
 		TIMSK1 |= (1 << OCIE1A);
 
-		// start timer1
-		TCNT1 = 0;
 	}
 
 	class Servo {
@@ -93,12 +95,16 @@ namespace ServoService {
 
 			void attach(volatile uint8_t * port, uint8_t pin) {
 
+				if (__nbr_of_servos == 0) {
+					init();
+				}
+
 				if (__nbr_of_servos >= MAX_NUMBER_OF_SERVOS) {
 					__index = -1;
 					return;
 				}
 
-				__index = __nbr_of_servos++;
+				__index = __nbr_of_servos;
 				servos[__index].active = true;
 				servos[__index].port = port;
 				servos[__index].pin = pin;
@@ -110,21 +116,27 @@ namespace ServoService {
 				// Cleaning pin level
 				*port &= ~(1 << pin);
 
+				// increase number of attached servos
 				__nbr_of_servos++;
 			}
 
-			void write_us(uint16_t us) {
+			inline void write_us(uint16_t us) {
 				servos[__index].ticks = us2ticks(us);
+			}
+
+			inline void enable(uint8_t b = 1) {
+				servos[__index].active = b;
 			}
 	};
 
-	void handle_interrupt(void) {
+	static void handle_interrupt(void) {
+
 		if (__servo_count == -1) {
 			// restart counter
 			TCNT1 = 0;
 		} else {
 			// set current Servo pin to low
-			if (__servo_count < __nbr_of_servos) {
+			if (__servo_count < __nbr_of_servos && servos[__servo_count].active) {
 				servos[__servo_count].low();
 			}
 		}
@@ -141,23 +153,26 @@ namespace ServoService {
 				servos[__servo_count].high();
 			}
 
-		} else {
+		} else { // if (__servo_count == __nbr_of_servos) {
 
-			OCR1A = 0000;
-
-//			if ((TCNT1 + 4) < __frame_ticks) {
-//				OCR1A = __frame_ticks;
-//			} else {
-//				OCR1A = TCNT1 + 4;
-//			}
+			//if ((TCNT1 + 4) < __frame_ticks) {
+			if ((TCNT1 + 4) < us2ticks(FRAME_PERIOD)) {
+				//OCR1A = __frame_ticks;
+				OCR1A = us2ticks(FRAME_PERIOD);
+			} else {
+				OCR1A = TCNT1 + 4;
+			}
 			__servo_count = -1;
 		}
+
 	}
+
 }
 
 // action
-ISR (TIMER1_COMPA_vect) {
+ISR(TIMER1_COMPA_vect) {
 	ServoService::handle_interrupt();
 }
 
 #endif /* SERVO_SERVICE_HPP_ */
+

@@ -15,38 +15,30 @@
 #include "servo_service.hpp"
 
 ServoService::Servo s1;
-ServoService::Servo s2;
+//ServoService::Servo s2;
+//ServoService::Servo s3;
 
 void setup(void) {
 
-	ServoService::setup(20000);
-	DDRB = 0xFF;
 	s1.attach(&PORTB, 5);
-	s1.write_us(15000);
-	s2.attach(&PORTB, 4);
-	s2.write_us(10000);
+	s1.write_us(2500);
+
+//	s2.attach(&PORTB, 5);
+//	s2.write_us(2500);
+//	s2.enable(0);
+//
+//	s3.attach(&PORTB, 5);
+//	s3.write_us(5000);
 
 	sei();
 }
 
-// action
-//ISR (TIMER1_COMPA_vect) {
-//	//_delay_ms(50);
-//	PORTB ^= (1 << 5);
-//}
-
 void loop(void) {
-//	_delay_ms(50);
-//	PORTB ^= (1 << 5);
 }
 
 int main() {
-
 	setup();
-
-	while (1)
-		loop();
-
+	while (1) loop();
 	return 0;
 }
 
