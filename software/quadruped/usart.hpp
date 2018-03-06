@@ -15,7 +15,7 @@
 
 class USART {
 
-	private:
+	public:
 		volatile uint8_t * const __ubrrh;
 		volatile uint8_t * const __ubrrl;
 		volatile uint8_t * const __ucsra;
@@ -24,20 +24,16 @@ class USART {
 		volatile uint8_t * const __udr;
 
 	public:
-		static bool (*int_rx_complete)(void);
-		static bool (*int_tx_complete)(void);
-		static bool (*int_udr_empty)(void);
+		static void (*int_rx_complete)(void);
+		static void (*int_tx_complete)(void);
+		static void (*int_udr_empty)(void);
 
 		typedef enum {
-			ASHYNC = 0,
-			SYNC_MASTER = 1,
-			SPI_MASTER = 3
+			ASHYNC = 0, SYNC_MASTER = 1, SPI_MASTER = 3
 		} operation_mode;
 
 		typedef enum {
-			PARITY_DISABLED = 0b00,
-			PARITY_EVEN = 0b10,
-			PARITY_ODD = 0b11
+			PARITY_DISABLED = 0b00, PARITY_EVEN = 0b10, PARITY_ODD = 0b11
 		} parity_mode;
 
 		typedef enum {
@@ -49,25 +45,40 @@ class USART {
 		} character_size;
 
 		typedef enum {
-			STOP_BIT_1 = 1,
-			STOP_BIT_2 = 2
+			STOP_BIT_1 = 1, STOP_BIT_2 = 2
 		} stop_bit_size;
 
-		USART(volatile uint8_t *ubrrh, volatile uint8_t *ubrrl, volatile uint8_t *ucsra, volatile uint8_t *ucsrb,
+		USART(volatile uint8_t *ubrrh, volatile uint8_t *ubrrl,
+				volatile uint8_t *ucsra, volatile uint8_t *ucsrb,
 				volatile uint8_t *ucsrc, volatile uint8_t *udr) :
-				__ubrrh(ubrrh), __ubrrl(ubrrl), __ucsra(ucsra), __ucsrb(ucsrb), __ucsrc(ucsrc), __udr(udr) {
+				__ubrrh(ubrrh), __ubrrl(ubrrl), __ucsra(ucsra), __ucsrb(ucsrb), __ucsrc(
+						ucsrc), __udr(udr) {
+		}
+
+		inline void attach_rx_interrupt(void (*rx_complete)(void)) {
+			USART::int_rx_complete = rx_complete;
+			__sbi((*__ucsrb), RXCIE0);
+		}
+
+		inline void attach_tx_interrupt(void (*tx_complete)(void)) {
+			USART::int_tx_complete = tx_complete;
+			__sbi((*__ucsrb), TXCIE0);
+		}
+
+		inline void attach_udr_empty_interrupt(void (*udr_empty)(void)) {
+			USART::int_udr_empty = udr_empty;
+			__sbi((*__ucsrb), UDRIE0);
 		}
 
 		/**
 		 * TODO: Add Data Register Empty Interrupt and Error Flags
 		 */
-		void begin_asynch(
-				unsigned long int baud = 9600, //
+		void begin_asynch(unsigned long int baud = 9600, //
 				bool tx_enable = true, //
 				bool rx_enable = true, //
-				bool (*rx_complete)(void) = 0x0, //
-				bool (*tx_complete)(void) = 0x0, //
-				bool (*udr_empty)(void) = 0x0, //
+				void (*rx_complete)(void) = 0x0, //
+				void (*tx_complete)(void) = 0x0, //
+				void (*udr_empty)(void) = 0x0, //
 				character_size char_size = CHAR_SIZE_8, //
 				parity_mode parity = PARITY_DISABLED, //
 				stop_bit_size stopbit = STOP_BIT_1 //
@@ -156,26 +167,30 @@ class USART {
 			// Enabling interrupts. UCSR0B [xx-- ----]
 			// Enable interrupts
 			// UCSR0B |= (1 << RXCIE0) | (1 << TXCIE0);
-			if (rx_complete) __sbi((*__ucsrb), RXCIE0);
-			else __cbi((*__ucsrb), RXCIE0);
+			if (rx_complete) attach_rx_interrupt(rx_complete);
+			//else __cbi((*__ucsrb), RXCIE0);
 			USART::int_rx_complete = rx_complete;
 
-			if (tx_complete) __sbi((*__ucsrb), TXCIE0);
-			else __cbi((*__ucsrb), TXCIE0);
-			USART::int_tx_complete = tx_complete;
+			if (tx_complete) attach_tx_interrupt(tx_complete);
+			//else __cbi((*__ucsrb), TXCIE0);
+			//USART::int_tx_complete = tx_complete;
 
-			if (udr_empty) __sbi((*__ucsrb), UDRIE0);
-			else __cbi((*__ucsrb), UDRIE0);
-			USART::int_udr_empty = udr_empty;
+			if (udr_empty) attach_udr_empty_interrupt(udr_empty);
+			//else __cbi((*__ucsrb), UDRIE0);
+			//USART::int_udr_empty = udr_empty;
 
 			// Enabling RX e TX
 			// Enable RX and TX
 			// UCSR0B |= (1 << RXEN0) | (1 << TXEN0);
-			if (rx_enable) __sbi((*__ucsrb), RXEN0);
-			else __cbi((*__ucsrb), RXEN0);
+			if (rx_enable)
+			__sbi((*__ucsrb), RXEN0);
+			else
+			__cbi((*__ucsrb), RXEN0);
 
-			if (tx_enable) __sbi((*__ucsrb), TXEN0);
-			else __cbi((*__ucsrb), TXEN0);
+			if (tx_enable)
+			__sbi((*__ucsrb), TXEN0);
+			else
+			__cbi((*__ucsrb), TXEN0);
 		}
 
 		uint8_t read() {
@@ -220,20 +235,23 @@ class USART {
 };
 
 /* Static attributes initialization */
-bool (*USART::int_rx_complete)(void) = 0;
-bool (*USART::int_tx_complete)(void) = 0;
-bool (*USART::int_udr_empty)(void) = 0;
+void (*USART::int_rx_complete)(void) = 0;
+void (*USART::int_tx_complete)(void) = 0;
+void (*USART::int_udr_empty)(void) = 0;
 
 ISR( USART_RX_vect ) {
-	if (USART::int_rx_complete) USART::int_rx_complete();
+	if (USART::int_rx_complete)
+		USART::int_rx_complete();
 }
 
 ISR( USART_TX_vect ) {
-	if (USART::int_tx_complete) USART::int_tx_complete();
+	if (USART::int_tx_complete)
+		USART::int_tx_complete();
 }
 
 ISR( USART_UDRE_vect ) {
-	if (USART::int_udr_empty) USART::int_udr_empty();
+	if (USART::int_udr_empty)
+		USART::int_udr_empty();
 }
 
 USART usart(&UBRR0H, &UBRR0L, &UCSR0A, &UCSR0B, &UCSR0C, &UDR0);
