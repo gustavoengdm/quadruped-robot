@@ -11,6 +11,9 @@
 #include <stddef.h>
 
 void * operator new(size_t objsize);
+void * operator new[](size_t objsize);
+
 void operator delete(void * obj);
+void operator delete[](void * obj);
 
 #endif /* NEW_HPP_ */

@@ -8,10 +8,10 @@
 #ifndef USART_HPP_
 #define USART_HPP_
 
-#include "com.hpp"
-
 #include <avr/io.h>
 #include <avr/interrupt.h>
+
+#include "com.hpp"
 
 class USART {
 
@@ -212,7 +212,7 @@ class USART {
 			UDR0 = byte;
 		}
 
-		void print(const uint8_t * str) {
+		void print(const char * str) {
 
 			int c = 0;
 			while (str[c] != 0) {
@@ -227,7 +227,7 @@ class USART {
 		void println() {
 			write('\n');
 		}
-		void println(const uint8_t * str) {
+		void println(const char * str) {
 			print(str);
 			write('\n');
 		}
