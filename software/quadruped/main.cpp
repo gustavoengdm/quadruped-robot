@@ -9,20 +9,24 @@
  avrdude -Cavrdude.conf -patmega328p -carduino -P/dev/ttyUSB0 -b57600 -D -Uflash:w:/mnt/wdisk/work/projects/robotics/quadruped-robot/eclipse-workspace/tmp/Release/tmp.hex:i
  **/
 
-#define DEBUG	1
-
-
 #include <avr/io.h>
 #include <util/delay.h>
 #include <string.h>
 
 #include "servo_service.hpp"
-#include "usart.hpp"
-#include "scommand.hpp"
-
-scommand::SCommand<1> scomm(9600, '\n');
-
 ServoService::Servo s1;
+
+#include "usart.hpp"
+USE_USART
+
+#include "scommand.hpp"
+scommand::SCommand<3, 12> scom(usart);
+
+// Used to create a static interrupt link between Scommand and usart
+inline void serial_rx_handler() {
+	scom.serial_rx_interrupt();
+}
+
 
 void move(void) {
 
@@ -48,16 +52,22 @@ void move(void) {
 }
 
 void setup(void) {
-	scomm.add("move", 0x0);
+	usart.begin_asynch(9600);
+	usart.attach_rx_interrupt( serial_rx_handler );
 
-	s1.attach(&PORTB, 2);
-	s1.write_us(1500);
+	scom.add( "move", move );
+
+	s1.attach(&PORTB, 5);
+	s1.write_us(1000);
 	sei();
 }
 
 void loop(void) {
-	_delay_ms(500);
-	usart.print("I'm alive\n");
+	scom.proc();
+	_delay_ms(1500);
+	usart.print("I'm alive ... | ");
+	usart.println( scom.buff );
+	//move();
 }
 
 int main() {

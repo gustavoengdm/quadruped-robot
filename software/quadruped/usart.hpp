@@ -24,9 +24,12 @@ class USART {
 		volatile uint8_t * const __udr;
 
 	public:
-		static void (*int_rx_complete)(void);
-		static void (*int_tx_complete)(void);
-		static void (*int_udr_empty)(void);
+//		static void (*int_rx_complete)(void);
+//		static void (*int_tx_complete)(void);
+//		static void (*int_udr_empty)(void);
+		void (*int_rx_complete)(void);
+		void (*int_tx_complete)(void);
+		void (*int_udr_empty)(void);
 
 		typedef enum {
 			ASHYNC = 0, SYNC_MASTER = 1, SPI_MASTER = 3
@@ -56,17 +59,20 @@ class USART {
 		}
 
 		inline void attach_rx_interrupt(void (*rx_complete)(void)) {
-			USART::int_rx_complete = rx_complete;
+			//USART::int_rx_complete = rx_complete;
+			int_rx_complete = rx_complete;
 			__sbi((*__ucsrb), RXCIE0);
 		}
 
 		inline void attach_tx_interrupt(void (*tx_complete)(void)) {
-			USART::int_tx_complete = tx_complete;
+			//USART::int_tx_complete = tx_complete;
+			int_tx_complete = tx_complete;
 			__sbi((*__ucsrb), TXCIE0);
 		}
 
 		inline void attach_udr_empty_interrupt(void (*udr_empty)(void)) {
-			USART::int_udr_empty = udr_empty;
+			//USART::int_udr_empty = udr_empty;
+			int_udr_empty = udr_empty;
 			__sbi((*__ucsrb), UDRIE0);
 		}
 
@@ -234,26 +240,40 @@ class USART {
 
 };
 
-/* Static attributes initialization */
-void (*USART::int_rx_complete)(void) = 0;
-void (*USART::int_tx_complete)(void) = 0;
-void (*USART::int_udr_empty)(void) = 0;
 
-ISR( USART_RX_vect ) {
-	if (USART::int_rx_complete)
-		USART::int_rx_complete();
-}
+#define USE_USART \
+		USART usart(&UBRR0H, &UBRR0L, &UCSR0A, &UCSR0B, &UCSR0C, &UDR0); \
+		ISR( USART_RX_vect ) { \
+			if (usart.int_rx_complete) \
+				usart.int_rx_complete(); \
+		} \
+		ISR( USART_TX_vect ) { \
+			if (usart.int_tx_complete) \
+				usart.int_tx_complete(); \
+		} \
+		ISR( USART_UDRE_vect ) { \
+			if (usart.int_udr_empty) \
+				usart.int_udr_empty();  \
+		}
 
-ISR( USART_TX_vect ) {
-	if (USART::int_tx_complete)
-		USART::int_tx_complete();
-}
-
-ISR( USART_UDRE_vect ) {
-	if (USART::int_udr_empty)
-		USART::int_udr_empty();
-}
-
-USART usart(&UBRR0H, &UBRR0L, &UCSR0A, &UCSR0B, &UCSR0C, &UDR0);
+///* Static attributes initialization */
+//void (*USART::int_rx_complete)(void) = 0;
+//void (*USART::int_tx_complete)(void) = 0;
+//void (*USART::int_udr_empty)(void) = 0;
+//
+//ISR( USART_RX_vect ) {
+//	if (USART::int_rx_complete)
+//		USART::int_rx_complete();
+//}
+//
+//ISR( USART_TX_vect ) {
+//	if (USART::int_tx_complete)
+//		USART::int_tx_complete();
+//}
+//
+//ISR( USART_UDRE_vect ) {
+//	if (USART::int_udr_empty)
+//		USART::int_udr_empty();
+//}
 
 #endif /* USART_HPP_ */
