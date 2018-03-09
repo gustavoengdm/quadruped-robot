@@ -14,7 +14,7 @@ ServoService::Servo s1;
 
 #include "usart.hpp"
 
-//#define DEBUG_SCOMMAND
+#define DEBUG_SCOMMAND
 #include "scommand.hpp"
 scommand::SCommand<3, 10> scom(usart);
 

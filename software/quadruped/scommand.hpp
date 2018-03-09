@@ -100,9 +100,6 @@ namespace scommand {
 					__buff[buff_pos] = 0;
 					new_comm = 1;
 					buff_pos = 0;
-#ifdef DEBUG_SCOMMAND
-					__usart->println("serial_rx_interrupt: end of command");
-#endif
 					return;
 				}
 				buff_pos++;
@@ -125,7 +122,14 @@ namespace scommand {
 
 				c = command_match(__buff);
 				if (c > -1) {
+#ifdef DEBUG_SCOMMAND
+					__usart->print("Executing: ");
+					__usart->println(__buff);
+#endif
 					command_list[c].function();
+				} else {
+					__usart->print(__buff);
+					__usart->println(" -- What?");
 				}
 				new_comm = 0;
 			}
