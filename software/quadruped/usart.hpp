@@ -24,9 +24,6 @@ class USART {
 		volatile uint8_t * const __udr;
 
 	public:
-//		static void (*int_rx_complete)(void);
-//		static void (*int_tx_complete)(void);
-//		static void (*int_udr_empty)(void);
 		void (*int_rx_complete)(void);
 		void (*int_tx_complete)(void);
 		void (*int_udr_empty)(void);
@@ -54,27 +51,15 @@ class USART {
 		USART(volatile uint8_t *ubrrh, volatile uint8_t *ubrrl,
 				volatile uint8_t *ucsra, volatile uint8_t *ucsrb,
 				volatile uint8_t *ucsrc, volatile uint8_t *udr) :
-				__ubrrh(ubrrh), __ubrrl(ubrrl), __ucsra(ucsra), __ucsrb(ucsrb), __ucsrc(
-						ucsrc), __udr(udr) {
+				__ubrrh(ubrrh), __ubrrl(ubrrl), //
+				__ucsra(ucsra), __ucsrb(ucsrb), //
+				__ucsrc(ucsrc), __udr(udr), //
+				int_rx_complete(0x0), int_tx_complete(0x0), int_udr_empty(0x0) {
 		}
 
-		inline void attach_rx_interrupt(void (*rx_complete)(void)) {
-			//USART::int_rx_complete = rx_complete;
-			int_rx_complete = rx_complete;
-			__sbi((*__ucsrb), RXCIE0);
-		}
-
-		inline void attach_tx_interrupt(void (*tx_complete)(void)) {
-			//USART::int_tx_complete = tx_complete;
-			int_tx_complete = tx_complete;
-			__sbi((*__ucsrb), TXCIE0);
-		}
-
-		inline void attach_udr_empty_interrupt(void (*udr_empty)(void)) {
-			//USART::int_udr_empty = udr_empty;
-			int_udr_empty = udr_empty;
-			__sbi((*__ucsrb), UDRIE0);
-		}
+		void attach_rx_complete_interrupt(void (*rx_complete)(void));
+		void attach_tx_complete_interrupt(void (*tx_complete)(void));
+		void attach_udr_empty_interrupt(void (*udr_empty)(void));
 
 		/**
 		 * TODO: Add Data Register Empty Interrupt and Error Flags
@@ -173,11 +158,11 @@ class USART {
 			// Enabling interrupts. UCSR0B [xx-- ----]
 			// Enable interrupts
 			// UCSR0B |= (1 << RXCIE0) | (1 << TXCIE0);
-			if (rx_complete) attach_rx_interrupt(rx_complete);
+			if (rx_complete) attach_rx_complete_interrupt(rx_complete);
 			//else __cbi((*__ucsrb), RXCIE0);
 			USART::int_rx_complete = rx_complete;
 
-			if (tx_complete) attach_tx_interrupt(tx_complete);
+			if (tx_complete) attach_tx_complete_interrupt(tx_complete);
 			//else __cbi((*__ucsrb), TXCIE0);
 			//USART::int_tx_complete = tx_complete;
 
@@ -199,81 +184,22 @@ class USART {
 			__cbi((*__ucsrb), TXEN0);
 		}
 
-		uint8_t read() {
-			while (!((*__ucsra) & (1 << RXC0)))
-				;
-			return UDR0;
-		}
-
-		void write(uint8_t byte) {
-			while (!((*__ucsra) & (1 << UDRE0)))
-				;
-
-			UDR0 = byte;
-		}
-
-		void write9(uint16_t byte) {
-			// TODO: Add support to write 9bit character.
-			// Write a nine bit on UCSR0B before UDR0
-			UDR0 = byte;
-		}
-
-		void print(const char * str) {
-
-			int c = 0;
-			while (str[c] != 0) {
-				while (!((*__ucsra) & (1 << UDRE0)))
-					;
-				//UDR0 = str[c];
-				(*__udr) = str[c];
-				++c;
-			}
-
-		}
-		void println() {
-			write('\n');
-		}
-		void println(const char * str) {
-			print(str);
-			write('\n');
-		}
-
+		uint8_t read();
+		void write(uint8_t byte);
+		void write9(uint16_t byte);
+		void print(const char * str);
+		void println();
+		void println(const char * str);
 };
 
+#ifdef UBRR0
+#define HAVE_USART0
+extern USART usart;
+#endif
 
-#define USE_USART \
-		USART usart(&UBRR0H, &UBRR0L, &UCSR0A, &UCSR0B, &UCSR0C, &UDR0); \
-		ISR( USART_RX_vect ) { \
-			if (usart.int_rx_complete) \
-				usart.int_rx_complete(); \
-		} \
-		ISR( USART_TX_vect ) { \
-			if (usart.int_tx_complete) \
-				usart.int_tx_complete(); \
-		} \
-		ISR( USART_UDRE_vect ) { \
-			if (usart.int_udr_empty) \
-				usart.int_udr_empty();  \
-		}
-
-///* Static attributes initialization */
-//void (*USART::int_rx_complete)(void) = 0;
-//void (*USART::int_tx_complete)(void) = 0;
-//void (*USART::int_udr_empty)(void) = 0;
-//
-//ISR( USART_RX_vect ) {
-//	if (USART::int_rx_complete)
-//		USART::int_rx_complete();
-//}
-//
-//ISR( USART_TX_vect ) {
-//	if (USART::int_tx_complete)
-//		USART::int_tx_complete();
-//}
-//
-//ISR( USART_UDRE_vect ) {
-//	if (USART::int_udr_empty)
-//		USART::int_udr_empty();
-//}
+#ifdef UBRR1
+#define HAVE_USART1
+extern USART usart1;
+#endif
 
 #endif /* USART_HPP_ */
