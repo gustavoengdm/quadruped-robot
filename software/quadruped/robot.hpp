@@ -17,9 +17,14 @@
 namespace robot {
 
 	void init();
-	void move();
-	void min();
-	void max();
+
+	void calibrate_servo(uint8_t leg, uint8_t joint);
+
+	void move(void * arg);
+	void min(void * arg);
+	void max(void * arg);
+
+	void loop_control( void );
 
 }
 ;

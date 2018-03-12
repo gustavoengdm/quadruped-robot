@@ -9,37 +9,41 @@
 #include <util/delay.h>
 #include <string.h>
 
-//#include "servo_service.hpp"
-//ServoService::Servo s1;
-//ServoService::Servo s2;
-
 #include "robot.hpp"
 
 #include "usart.hpp"
 
-#define DEBUG_SCOMMAND
+//#define DEBUG_SCOMMAND
 #include "scommand.hpp"
-scommand::SCommand<4, 15> scom(usart);
+scommand::SCommand<4, 8> scom(usart);
 
 // Used to create a static link between Scommand and usart's interrupt
-inline void serial_rx_handler() {
+void serial_rx_handler() {
 	scom.serial_rx_interrupt();
+}
+
+void wrapper_min(void * s) {
+	scommand::SCommand<4, 8> * scom = (scommand::SCommand<4, 8> *) s;
+	int k = scom->get_next_integer();
+	robot::max(&k);
 }
 
 void setup(void) {
 	usart.begin_asynch(9600);
 	usart.attach_rx_complete_interrupt(serial_rx_handler);
 
-	robot::init();
+	scom.add("min", wrapper_min, 0x0);
+	scom.add("min", robot::min, 0x0);
+	scom.add("max", robot::max, 0x0);
 
-	scom.add("min", robot::min);
-	scom.add("max", robot::max);
+	robot::init();
 
 	sei();
 }
 
 void loop(void) {
 	scom.proc();
+	robot::loop_control();
 }
 
 int main() {

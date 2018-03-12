@@ -9,11 +9,12 @@
 
 namespace ServoService {
 
-	class __servo {
+	class __servo_pin {
 		public:
 			uint8_t pin;
 			volatile uint8_t * port;
 			volatile uint16_t ticks;
+			volatile uint16_t min_ticks, max_ticks;
 			volatile uint8_t active;
 
 		public:
@@ -34,7 +35,7 @@ namespace ServoService {
 		return __nbr_of_servos;
 	}
 
-	__servo servos[MAX_NUMBER_OF_SERVOS];
+	__servo_pin servos[MAX_NUMBER_OF_SERVOS];
 
 	/**
 	 * Configure Timer1 to ServoService
@@ -105,11 +106,9 @@ namespace ServoService {
 
 	Servo::Servo() {
 		__index = 0;
-		__min_ticks = us2ticks(MIN_PULSE);
-		__max_ticks = us2ticks(MAX_PULSE);
 	}
 
-	void Servo::attach(volatile uint8_t * port, uint8_t pin) {
+	void Servo::attach(volatile uint8_t * port, uint8_t pin, uint16_t ticks ) {
 
 		if (__nbr_of_servos == 0) {
 			init();
@@ -121,10 +120,12 @@ namespace ServoService {
 		}
 
 		__index = __nbr_of_servos;
-		servos[__index].active = true;
+		servos[__index].active = false;
 		servos[__index].port = port;
 		servos[__index].pin = pin;
-		servos[__index].ticks = __min_ticks;
+		servos[__index].ticks = us2ticks(MIN_PULSE);
+		servos[__index].min_ticks = us2ticks(MIN_PULSE);
+		servos[__index].max_ticks = us2ticks(MAX_PULSE);
 
 		// Accessing DDRx to configure pin as OUTPUT
 		*(port - 1) |= (1 << pin);
@@ -137,6 +138,7 @@ namespace ServoService {
 	}
 
 	void Servo::write_us(uint16_t us) {
+		servos[__index].active = true;
 		servos[__index].ticks = us2ticks(us);
 	}
 

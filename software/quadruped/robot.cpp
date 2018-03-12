@@ -10,11 +10,13 @@
 #include "usart.hpp"
 #include "robot.hpp"
 
+#include "scommand.hpp"
+
 namespace robot {
 
 	ServoService::Servo legs[ N_LEGS][ N_JOINTS];
 
-	void init() {
+	void init(void) {
 		uint8_t l, j;
 
 		legs[0][0].attach(&PORTD, 2);
@@ -31,22 +33,30 @@ namespace robot {
 		legs[3][2].attach(&PORTB, 5);
 
 		usart.print("Number of servos: ");
-		usart.write( ServoService::get_number_of_servos() + '0' );
+		usart.write(ServoService::get_number_of_servos() + '0');
 		usart.print("\n");
 
-		for (l = 0; l < 1/*N_LEGS*/; l++) {
+		for (l = 0; l < N_LEGS; l++) {
 			for (j = 0; j < N_JOINTS; j++) {
-				legs[l][j].write_us(600);
+				legs[l][j].write_us(1000);
 			}
 		}
 	}
 
-	void min(void) {
+	void calibrate_servo(uint8_t leg, void * arg) {
+		//legs[0]][0].
+	}
+
+	void min(void * arg) {
 		legs[0][0].write_us(600);
 	}
 
-	void max(void) {
-			legs[0][0].write_us(2000);
-		}
+	void max(void * arg) {
+		legs[0][0].write_us(2000);
+	}
+
+	void loop_control(void) {
+
+	}
 
 }

@@ -10,6 +10,7 @@
 
 //#include "new.hpp"
 #include <stdlib.h>
+#include <string.h>
 #include "usart.hpp"
 
 namespace scommand {
@@ -20,15 +21,16 @@ namespace scommand {
 		public:
 			USART * __usart;				// USART to deal
 
-			char __buff[COMM_BUFFER_SIZE];	// buffer message
+			char __buff[COMM_BUFFER_SIZE+1];	// buffer message
 			uint8_t buff_pos;
 
 			char endchar;					// character command terminator
 			char delim;						// string separator
 
 			typedef struct {
-					char event_name[COMMAND_MAX_SIZE];
-					void (*function)(void);
+					char event_name[COMMAND_MAX_SIZE+1];
+					void (*function)(void *);
+					void * arg;
 			} CommandCall;
 			CommandCall command_list[N_COMMANDS];						// vector of commands
 			uint8_t comm_count;				// number of commands inserted
@@ -49,13 +51,14 @@ namespace scommand {
 				return __buff;
 			}
 
-			void add(const char * msg, void (*f)(void)) {
+			void add(const char * msg, void (*f)(void *), void * arg) {
 				int sz;
 				if (comm_count < N_COMMANDS) {
 					sz = strlen(msg);
 					if (sz < COMMAND_MAX_SIZE - 1) {
 						strncpy(command_list[comm_count].event_name, msg, sz);
 						command_list[comm_count].function = f;
+						command_list[comm_count].arg = arg;
 						comm_count++;
 					}
 #ifdef DEBUG_SCOMMAND
@@ -126,12 +129,19 @@ namespace scommand {
 					__usart->print("Executing: ");
 					__usart->println(__buff);
 #endif
-					command_list[c].function();
+					command_list[c].function(command_list[c].arg);
 				} else {
 					__usart->print(__buff);
 					__usart->println(" -- What?");
 				}
 				new_comm = 0;
+			}
+
+			char * get_next_string(void) {
+				return 0x0;
+			}
+			int get_next_integer(void) {
+				return 0;
 			}
 	};
 
