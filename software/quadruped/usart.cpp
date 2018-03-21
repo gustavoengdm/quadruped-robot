@@ -58,6 +58,19 @@ void USART::println(const char * str) {
 	write('\n');
 }
 
+//void USART::print(int n) {
+//	uint8_t k;
+//	if (n < 0) {
+//		write('-');
+//		n *= -1;
+//	}
+//	do {
+//		k = n / 10;
+//		n = n % 10;
+//		write('0');
+//	} while (n);
+//}
+
 #ifdef HAVE_USART0
 USART usart(&UBRR0H, &UBRR0L, &UCSR0A, &UCSR0B, &UCSR0C, &UDR0);
 ISR( USART_RX_vect ) {

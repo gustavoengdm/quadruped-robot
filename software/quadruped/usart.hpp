@@ -190,6 +190,8 @@ class USART {
 		void print(const char * str);
 		void println();
 		void println(const char * str);
+
+		void print( int n );
 };
 
 #ifdef UBRR0

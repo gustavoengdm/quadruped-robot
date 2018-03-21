@@ -15,24 +15,41 @@
 
 //#define DEBUG_SCOMMAND
 #include "scommand.hpp"
-scommand::SCommand<4, 8> scom(usart);
+scommand::SCommand<4, 12> scom(usart);
 
 // Used to create a static link between Scommand and usart's interrupt
 void serial_rx_handler() {
 	scom.serial_rx_interrupt();
 }
 
-void wrapper_min(void * s) {
-	scommand::SCommand<4, 8> * scom = (scommand::SCommand<4, 8> *) s;
-	int k = scom->get_next_integer();
-	robot::max(&k);
+void wrapper_set(void * s) {
+	scommand::SCommand<4, 12> * scom = (scommand::SCommand<4, 12> *) s;
+	int ticks;
+
+	ticks = scom->get_next_integer();
+
+	robot::set_all(ticks);
+
+}
+
+void wrapper_move(void * s) {
+	scommand::SCommand<4, 12> * scom = (scommand::SCommand<4, 12> *) s;
+	int leg, joint, ticks;
+
+	leg = scom->get_next_integer();
+	joint = scom->get_next_integer();
+	ticks = scom->get_next_integer();
+
+	robot::move_leg(leg, joint, ticks);
+
 }
 
 void setup(void) {
 	usart.begin_asynch(9600);
 	usart.attach_rx_complete_interrupt(serial_rx_handler);
 
-	scom.add("min", wrapper_min, 0x0);
+	scom.add("set", wrapper_set, &scom);
+	scom.add("mvl", wrapper_move, &scom);
 	scom.add("min", robot::min, 0x0);
 	scom.add("max", robot::max, 0x0);
 
@@ -44,6 +61,7 @@ void setup(void) {
 void loop(void) {
 	scom.proc();
 	robot::loop_control();
+	//float x = robot::rect2polar(1,1,1);
 }
 
 int main() {

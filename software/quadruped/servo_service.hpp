@@ -15,7 +15,6 @@
 
 #include "com.hpp"
 
-
 #define MAX_NUMBER_OF_SERVOS 12
 
 // definitions in microseconds
@@ -38,9 +37,16 @@ namespace ServoService {
 
 		public:
 			Servo();
-			void attach(volatile uint8_t * port, uint8_t pin, uint16_t ticks = us2ticks(MIN_PULSE) );
+			//void attach(volatile uint8_t * port, uint8_t pin, uint16_t ticks = us2ticks(MIN_PULSE));
+			void attach(volatile uint8_t * port, uint8_t pin, //
+					uint16_t ticks_min = us2ticks(MIN_PULSE), uint16_t ticks_max = us2ticks(MAX_PULSE));
 			void write_us(uint16_t us);
-			void enable(uint8_t b);
+			void enable(uint8_t b = 1);
+			void min(void);
+			void max(void);
+
+			void define_min(uint16_t ticks);
+			void define_max(uint16_t ticks);
 	};
 
 }

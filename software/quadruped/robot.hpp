@@ -16,6 +16,8 @@
 
 namespace robot {
 
+	float rect2polar(float x, float y, float z);
+
 	void init();
 
 	void calibrate_servo(uint8_t leg, uint8_t joint);
@@ -24,7 +26,11 @@ namespace robot {
 	void min(void * arg);
 	void max(void * arg);
 
-	void loop_control( void );
+	void set_all(uint16_t ticks);
+
+	void loop_control(void);
+
+	void move_leg( uint8_t leg, uint8_t joint, uint16_t ticks);
 
 }
 ;

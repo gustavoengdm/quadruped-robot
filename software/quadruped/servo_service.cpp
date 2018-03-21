@@ -108,7 +108,8 @@ namespace ServoService {
 		__index = 0;
 	}
 
-	void Servo::attach(volatile uint8_t * port, uint8_t pin, uint16_t ticks ) {
+	//void Servo::attach(volatile uint8_t * port, uint8_t pin, uint16_t ticks) {
+	void Servo::attach(volatile uint8_t * port, uint8_t pin, uint16_t ticks_min, uint16_t ticks_max) {
 
 		if (__nbr_of_servos == 0) {
 			init();
@@ -124,8 +125,8 @@ namespace ServoService {
 		servos[__index].port = port;
 		servos[__index].pin = pin;
 		servos[__index].ticks = us2ticks(MIN_PULSE);
-		servos[__index].min_ticks = us2ticks(MIN_PULSE);
-		servos[__index].max_ticks = us2ticks(MAX_PULSE);
+		servos[__index].min_ticks = ticks_min;
+		servos[__index].max_ticks = ticks_max;
 
 		// Accessing DDRx to configure pin as OUTPUT
 		*(port - 1) |= (1 << pin);
@@ -144,6 +145,20 @@ namespace ServoService {
 
 	void Servo::enable(uint8_t b) {
 		servos[__index].active = b;
+	}
+
+	void Servo::min(void) {
+		write_us(servos[__index].min_ticks);
+	}
+	void Servo::max(void) {
+		write_us(servos[__index].max_ticks);
+	}
+
+	void Servo::define_min(uint16_t ticks) {
+		servos[__index].min_ticks = ticks;
+	}
+	void Servo::define_max(uint16_t ticks) {
+		servos[__index].max_ticks = ticks;
 	}
 
 }
