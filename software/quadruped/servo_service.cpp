@@ -6,6 +6,7 @@
  */
 
 #include "servo_service.hpp"
+#include "usart.hpp"
 
 namespace ServoService {
 
@@ -141,6 +142,34 @@ namespace ServoService {
 	void Servo::write_us(uint16_t us) {
 		servos[__index].active = true;
 		servos[__index].ticks = us2ticks(us);
+	}
+
+	void Servo::set_angle( float a ) {
+		int16_t us, maxt, mint;
+
+		if( a < 0 ) a = 360 + a;
+		if( a != 0) a = a / 180.0;
+
+		maxt = servos[__index].max_ticks;
+		mint = servos[__index].min_ticks;
+
+		usart.print("max_ticks: ");
+		usart.print( (int)(maxt) );
+		usart.println();
+		usart.print("min_ticks: ");
+		usart.print( (int)(mint) );
+		usart.println();
+
+		usart.print("diff: ");
+		usart.print( (int)(maxt-mint) );
+		usart.println();
+
+		us = (maxt-mint) * a + mint;
+
+		usart.print("diff(us): ");
+		usart.print( (int)(us) );
+		usart.println();
+		write_us( us );
 	}
 
 	void Servo::enable(uint8_t b) {

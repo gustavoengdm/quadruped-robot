@@ -15,7 +15,7 @@
 
 //#define DEBUG_SCOMMAND
 #include "scommand.hpp"
-scommand::SCommand<4, 12> scom(usart);
+scommand::SCommand<6, 12> scom(usart);
 
 // Used to create a static link between Scommand and usart's interrupt
 void serial_rx_handler() {
@@ -23,35 +23,65 @@ void serial_rx_handler() {
 }
 
 void wrapper_set(void * s) {
-	scommand::SCommand<4, 12> * scom = (scommand::SCommand<4, 12> *) s;
 	int ticks;
 
+	scommand::SCommand<4, 12> * scom = (scommand::SCommand<4, 12> *) s;
 	ticks = scom->get_next_integer();
-
 	robot::set_all(ticks);
+}
 
+void wrapper_setj(void * s) {
+	int ticks, joint;
+
+	scommand::SCommand<4, 12> * scom = (scommand::SCommand<4, 12> *) s;
+	joint = scom->get_next_integer();
+	ticks = scom->get_next_integer();
+	robot::set_joint(joint, ticks);
 }
 
 void wrapper_move(void * s) {
-	scommand::SCommand<4, 12> * scom = (scommand::SCommand<4, 12> *) s;
 	int leg, joint, ticks;
 
+	scommand::SCommand<4, 12> * scom = (scommand::SCommand<4, 12> *) s;
 	leg = scom->get_next_integer();
 	joint = scom->get_next_integer();
 	ticks = scom->get_next_integer();
-
 	robot::move_leg(leg, joint, ticks);
+}
 
+void help(void * s) {
+	usart.println("--------------------------");
+	usart.println("help");
+	usart.println("set <us>");
+	usart.println("sj <joint> <us>");
+	usart.println("mvl <leg> <joint> <us>");
+	usart.println("sa <leg> <joint> <angle>");
+	usart.println("min");
+	usart.println("max");
+	usart.println("--------------------------");
+}
+
+void wrapper_set_angle(void * s) {
+	int angle, joint, leg;
+
+	scommand::SCommand<4, 12> * scom = (scommand::SCommand<4, 12> *) s;
+	leg = scom->get_next_integer();
+	joint = scom->get_next_integer();
+	angle = scom->get_next_integer();
+	robot::set_angle(leg, joint, angle);
 }
 
 void setup(void) {
 	usart.begin_asynch(9600);
 	usart.attach_rx_complete_interrupt(serial_rx_handler);
 
-	scom.add("set", wrapper_set, &scom);
-	scom.add("mvl", wrapper_move, &scom);
-	scom.add("min", robot::min, 0x0);
-	scom.add("max", robot::max, 0x0);
+	scom.add("help", help, 0x0);			// help
+	scom.add("set", wrapper_set, &scom);	// set <us>
+	scom.add("sj", wrapper_setj, &scom);	// sj <joint> <us>
+	scom.add("mvl", wrapper_move, &scom);	// mvl <leg> <joint> <us>
+	scom.add("sa", wrapper_set_angle, &scom);	// sa <leg> <joint> <angle>
+	scom.add("min", robot::min, 0x0);		// min
+	scom.add("max", robot::max, 0x0);		// max
 
 	robot::init();
 
@@ -66,6 +96,7 @@ void loop(void) {
 
 int main() {
 	setup();
+	usart.print(-12000);
 	while (1)
 		loop();
 	return 0;

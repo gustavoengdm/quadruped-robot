@@ -26,13 +26,14 @@ namespace robot {
 	void min(void * arg);
 	void max(void * arg);
 
+	void set_joint(uint8_t joint, uint16_t ticks);
 	void set_all(uint16_t ticks);
 
 	void loop_control(void);
 
-	void move_leg( uint8_t leg, uint8_t joint, uint16_t ticks);
+	void move_leg(uint8_t leg, uint8_t joint, uint16_t ticks);
+	void set_angle(uint8_t leg, uint8_t joint, uint16_t angle);
 
 }
-;
 
 #endif /* ROBOT_HPP_ */

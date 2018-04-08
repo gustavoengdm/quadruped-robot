@@ -40,7 +40,10 @@ namespace ServoService {
 			//void attach(volatile uint8_t * port, uint8_t pin, uint16_t ticks = us2ticks(MIN_PULSE));
 			void attach(volatile uint8_t * port, uint8_t pin, //
 					uint16_t ticks_min = us2ticks(MIN_PULSE), uint16_t ticks_max = us2ticks(MAX_PULSE));
+
+
 			void write_us(uint16_t us);
+			void set_angle( float a );
 			void enable(uint8_t b = 1);
 			void min(void);
 			void max(void);

@@ -20,18 +20,23 @@ namespace robot {
 	void init(void) {
 		uint8_t l, j;
 
-		legs[0][0].attach(&PORTD, 2);
-		legs[0][1].attach(&PORTD, 3);
-		legs[0][2].attach(&PORTD, 4);
-		legs[1][0].attach(&PORTD, 5, MAX_PULSE, MIN_PULSE);
-		legs[1][1].attach(&PORTD, 6, MAX_PULSE, MIN_PULSE);
-		legs[1][2].attach(&PORTD, 7, MAX_PULSE, MIN_PULSE);
-		legs[2][0].attach(&PORTB, 0, MAX_PULSE, MIN_PULSE);
-		legs[2][1].attach(&PORTB, 1, MAX_PULSE, MIN_PULSE);
-		legs[2][2].attach(&PORTB, 2, MAX_PULSE, MIN_PULSE);
-		legs[3][0].attach(&PORTB, 3);
-		legs[3][1].attach(&PORTB, 4);
-		legs[3][2].attach(&PORTB, 5);
+		// tibia
+		legs[0][0].attach(&PORTD, 2, 500, 2000);
+		legs[1][0].attach(&PORTD, 5, 500, 2000);
+		legs[2][0].attach(&PORTB, 0, 500, 2000);
+		legs[3][0].attach(&PORTB, 3, 500, 2000);
+
+		// femur
+		legs[0][1].attach(&PORTD, 3, 500, 2000);
+		legs[1][1].attach(&PORTD, 6, 500, 2000);
+		legs[2][1].attach(&PORTB, 1, 500, 2000);
+		legs[3][1].attach(&PORTB, 4, 500, 2000);
+
+		// coxa
+		legs[0][2].attach(&PORTD, 4, 500, 2000);
+		legs[1][2].attach(&PORTD, 7, 500, 2200);
+		legs[2][2].attach(&PORTB, 2, 500, 2000);
+		legs[3][2].attach(&PORTB, 5, 500, 2000);
 
 		usart.print("Number of servos: ");
 		usart.write(ServoService::get_number_of_servos() + '0');
@@ -39,7 +44,8 @@ namespace robot {
 
 		for (l = 0; l < N_LEGS; l++) {
 			for (j = 0; j < N_JOINTS; j++) {
-				legs[l][j].write_us(MIN_PULSE);
+				//legs[l][j].write_us(MIN_PULSE);
+				legs[l][j].write_us(800);
 			}
 		}
 	}
@@ -89,13 +95,26 @@ namespace robot {
 		}
 	}
 
+	void set_joint(uint8_t joint, uint16_t ticks) {
+		int l;
+		for (l = 0; l < N_LEGS; l++) {
+			legs[l][joint].write_us(ticks);
+		}
+	}
+
+	void set_angle(uint8_t leg, uint8_t joint, uint16_t angle) {
+		legs[leg][joint].set_angle((float) angle);
+	}
+
 	void set_all(uint16_t ticks) {
 		int l, j;
+
 		for (l = 0; l < N_LEGS; l++) {
 			for (j = 0; j < N_JOINTS; j++) {
 				legs[l][j].write_us(ticks);
 			}
 		}
+
 	}
 
 	void loop_control(void) {
